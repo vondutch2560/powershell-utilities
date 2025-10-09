@@ -3,7 +3,7 @@ $OutputFile = "$env:USERPROFILE\Desktop\Hardware_Serial_Numbers.txt"
 
 # 1. Khoi tao Noi dung file va Ghi thong tin co ban
 Add-Content -Path $OutputFile -Value "--- THONG TIN SERIAL NUMBER LINH KIEN ---`n"
-Add-Content -Path $OutputFile -Value "Ngay trich xuat: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+Add-Content -Path $OutputFile -Value "Created Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 Add-Content -Path $OutputFile -Value "-------------------------------------------"
 Add-Content -Path $OutputFile -Value ""
 
@@ -29,13 +29,13 @@ foreach ($RAM in $RAM_SNs_New) {
     $Serial = $RAM.SerialNumber
     
     # Tao chuoi thong tin day du
-    $RAM_Info = "  - Khe cam: $($RAM.DeviceLocator) | Dung luong: $($RAM.CapacityGB)GB | Part No: $($RAM.PartNumber)"
+    $RAM_Info = "  - Slot: $($RAM.DeviceLocator) | Capacity: $($RAM.CapacityGB)GB | Part No: $($RAM.PartNumber)"
     
     # Them Serial Number (co kiem tra loi doc)
     if ($Serial -and ($Serial -ne "0") -and ($Serial -ne "Default String") -and ($Serial -ne "Not Specified")) {
         Add-Content -Path $OutputFile -Value "$RAM_Info | Serial: $Serial"
     } else {
-        Add-Content -Path $OutputFile -Value "$RAM_Info | Serial: KHONG CO/LOI DOC"
+        Add-Content -Path $OutputFile -Value "$RAM_Info | Serial: No Info or Read Error"
     }
 }
 
@@ -43,7 +43,7 @@ foreach ($RAM in $RAM_SNs_New) {
 Add-Content -Path $OutputFile -Value "`n--- DRIVE Serial Numbers (SSD/HDD) ---"
 $Drive_SNs = Get-CimInstance -ClassName Win32_DiskDrive | Select-Object Model, InterfaceType, SerialNumber
 foreach ($Drive in $Drive_SNs) {
-    Add-Content -Path $OutputFile -Value "  - Model: $($Drive.Model) | Loai: $($Drive.InterfaceType) | Serial: $($Drive.SerialNumber)"
+    Add-Content -Path $OutputFile -Value "  - Model: $($Drive.Model) | Type: $($Drive.InterfaceType) | Serial: $($Drive.SerialNumber)"
 }
 
 # 7. Thong bao hoan tat
