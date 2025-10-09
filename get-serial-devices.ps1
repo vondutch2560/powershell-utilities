@@ -2,7 +2,7 @@
 $OutputFile = "$env:USERPROFILE\Desktop\Hardware_Serial_Numbers.txt"
 
 # 1. Khoi tao Noi dung file va Ghi thong tin co ban
-Add-Content -Path $OutputFile -Value "--- THONG TIN SERIAL NUMBER LINH KIEN ---`n"
+Add-Content -Path $OutputFile -Value "--- HARDWARE COMPONENT SERIAL NUMBER INFORMATION---`n"
 Add-Content -Path $OutputFile -Value "Created Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 Add-Content -Path $OutputFile -Value "-------------------------------------------"
 Add-Content -Path $OutputFile -Value ""
@@ -20,7 +20,7 @@ $MB_SN = Get-CimInstance -ClassName Win32_BaseBoard | Select-Object -ExpandPrope
 Add-Content -Path $OutputFile -Value "Serial Number Mainboard: $MB_SN"
 
 # 4. Lay Serial Number cua RAM (Memory) - Su dung Win32_PhysicalMemory
-Add-Content -Path $OutputFile -Value "`n--- RAM Serial Numbers (Moi chip) ---"
+Add-Content -Path $OutputFile -Value "`n--- RAM Serial Numbers (Each chip) ---"
 # Su dung Win32_PhysicalMemory de lay thong tin chi tiet (Dung luong, Serial, Part Number)
 $RAM_SNs_New = Get-CimInstance -ClassName Win32_PhysicalMemory | Select-Object DeviceLocator, Manufacturer, SerialNumber, PartNumber, @{Name="CapacityGB";Expression={[math]::Round($_.Capacity/1GB, 0)}}
 
