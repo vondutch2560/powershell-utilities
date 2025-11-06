@@ -15,8 +15,6 @@ function Manage-LoginUserVisibility {
                               $_.Enabled -eq $true} | 
                 Select-Object -ExpandProperty Name
 
-    Write-Host $Users
-
     if (-not $Users) {
         Write-Warning "No other local user accounts found available for management."
         Write-Host "NOTE: The current user ('$CurrentUser') is automatically excluded." -ForegroundColor DarkYellow
