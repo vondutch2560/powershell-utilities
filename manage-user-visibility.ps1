@@ -1,26 +1,21 @@
 function Manage-LoginUserVisibility {
-    # Define the Registry path for hidden users
-    $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\SpecialAccounts\UserList"
-
-    # 1. Check Administrator privileges
-    if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    
+    if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
         Write-Error "This script must be run as Administrator."
         exit 1
     }
-    
-    # Get the name of the CURRENTLY LOGGED-IN user (to exclude it from modification)
-    $CurrentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name.Split('\')[-1] # Extracts just the username
-    
-    # List of default accounts to exclude
-    $ExcludedUsers = @("Administrator", "DefaultAccount", "Guest", "WDAGUtilityAccount", "HomeGroupUser$", "defaultuser0", "admin", "guest")
-    
-    # Get local users, filter out disabled/system accounts AND the current user
-    $Users = @(Get-LocalUser | Where-Object { 
-        $_.Enabled -eq $True -and 
-        $_.Name -notin $ExcludedUsers -and 
-        $_.Name -ne $CurrentUser -and # <-- EXCLUDE THE CURRENT USER HERE
-        $_.Name -notmatch "^\w{5,}\d{5,}$"  # Exclude common random system/service accounts
-    } | Select-Object -Property Name | Sort-Object Name)
+
+    $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\SpecialAccounts\UserList"
+    $ExcludedUsers = @("Administrator", "DefaultAccount", "Guest", "WDAGUtilityAccount", "HomeGroupUser$", "defaultuser0", "guest")
+    $CurrentUser = $env:USERNAME
+    $HiddenUsers = Get-Item -Path $RegPath | Select-Object -ExpandProperty Property
+    $Users = Get-LocalUser | 
+                Where-Object {$_.Name -notin $ExcludedUsers -and 
+                              $_.Name -ne $CurrentUser -and
+                              $_.Enabled -eq $true} | 
+                Select-Object -ExpandProperty Name
+
+    Write-Host $Users
 
     if (-not $Users) {
         Write-Warning "No other local user accounts found available for management."
@@ -32,12 +27,8 @@ function Manage-LoginUserVisibility {
     Write-Host "`n-- Local User Account List--`n" -ForegroundColor Cyan
     Write-Host "[VISIBLE] $CurrentUser (current user)" -ForegroundColor DarkGray
 
-    $hiddenUsers = @((Get-Item -Path "$regPath").GetValueNames())
-    Write-Host $hiddenUsers
-
-  
     for ($i = 0; $i -lt $Users.Count; $i++) {
-        $UserName = $Users[$i].Name
+        $UserName = $Users[$i]
 
         # Check current visibility status by checking the Registry
         $IsHidden = $hiddenUsers -contains $UserName
@@ -70,7 +61,7 @@ function Manage-LoginUserVisibility {
         return
     }
 
-    $SelectedUser = $Users[$Selection - 1].Name
+    $SelectedUser = $Users[$Selection - 1]
     
     # 4. Request Action (Hide/Show)
     Write-Host "`nWhat would you like to do with the account '$SelectedUser'?" -ForegroundColor Cyan
@@ -79,26 +70,21 @@ function Manage-LoginUserVisibility {
     $Action = Read-Host "Enter choice (1 or 2)"
     
     # 5. Execute Action
-    try {
-        # Ensure the parent UserList key exists before manipulation
-        New-Item -Path $RegPath -Force | Out-Null
-        
+    try {        
         switch ($Action) {
             "1" { # Hide (Create DWORD = 0)
-                Write-Host "Hiding user '$SelectedUser'..."
                 New-ItemProperty -Path $RegPath -Name $SelectedUser -Value 0 -PropertyType DWord -Force | Out-Null
                 Write-Host "✅ Successfully HIDDEN '$SelectedUser'." -ForegroundColor Green
             }
             "2" { # Show (Delete DWORD)
-                Write-Host "Showing user '$SelectedUser' again..."
-                Remove-ItemProperty -Path $RegPath -Name $SelectedUser -Force -ErrorAction Stop
+                Remove-ItemProperty -Path $RegPath -Name $SelectedUser -Force
                 Write-Host "✅ Successfully SHOWN '$SelectedUser' again." -ForegroundColor Green
             }
             default {
                 Write-Warning "Invalid action choice. Operation cancelled."
             }
         }
-        
+    
         # General notification
         if ($Action -in @("1", "2")) {
             Write-Host "Please restart the computer for changes to take effect." -ForegroundColor Magenta
