@@ -6,6 +6,8 @@ function Manage-LoginUserVisibility {
     }
 
     $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\SpecialAccounts\UserList"
+    New-Item -Path $RegPath -Force | Out-Null
+
     $ExcludedUsers = @("Administrator", "DefaultAccount", "Guest", "WDAGUtilityAccount", "HomeGroupUser$", "defaultuser0", "guest")
     $CurrentUser = $env:USERNAME
     $HiddenUsers = Get-Item -Path $RegPath | Select-Object -ExpandProperty Property
@@ -14,6 +16,8 @@ function Manage-LoginUserVisibility {
                               $_.Name -ne $CurrentUser -and
                               $_.Enabled -eq $true} | 
                 Select-Object -ExpandProperty Name
+
+    New-Item -Path $RegPath -Force | Out-Null
 
     if (-not $Users) {
         Write-Warning "No other local user accounts found available for management."
@@ -33,7 +37,7 @@ function Manage-LoginUserVisibility {
 
         # Display menu item
         if ($IsHidden) {
-            Write-Host "[HIDDEN] " -ForegroundColor Red -NoNewline
+            Write-Host "[HIDDEN]  " -ForegroundColor Red -NoNewline
         } else {
             Write-Host "[VISIBLE] " -ForegroundColor Green -NoNewline
         }
